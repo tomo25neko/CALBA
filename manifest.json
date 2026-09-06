@@ -2,7 +2,7 @@
   "name": "CALBA",
   "short_name": "CALBA",
   "start_url": "/CALBA/",
-  "scope": "./",
+  "scope": "/CALBA/",
   "display": "standalone",
   "background_color": "#f8fafc",
   "theme_color": "#2563eb",

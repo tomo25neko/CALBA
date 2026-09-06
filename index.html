@@ -427,7 +427,7 @@
 
   function initPWA() {
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js').catch(console.error);
+      navigator.serviceWorker.register('sw.js',{scope: '/CALBA/'}).catch(console.error);
     }
   }
 

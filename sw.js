@@ -21,8 +21,7 @@ self.addEventListener('activate', (event) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
           // 自分のPREFIXで始まり、かつ開発版(-dev-)ではなく、今の名前でもない場合のみ消す
-          if (cacheName.startsWith(CACHE_PREFIX) &&  
-              cacheName !== CACHE_NAME) {
+          if (cacheName !== CACHE_NAME) {
             return caches.delete(cacheName);
           }
         })

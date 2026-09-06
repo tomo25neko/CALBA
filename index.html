@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>CALBA</title>
   <link rel="icon" href="icon.png">
+  <link rel="manifest" href="manifest.json">
   <style>
     :root {
       --primary: #2563eb;
@@ -419,59 +420,14 @@
       specialBonus: 50,
       cutoffDay: "31",
       annualLimit: 1030000
-    },
-    ICON_PATH: 'icon.png'
+    }
   };
 
   let records = [];
 
   function initPWA() {
-    const manifestObj = {
-      name: "CALBA",
-      short_name: "CALBA",
-      start_url: "./",
-      display: "standalone",
-      background_color: "#f8fafc",
-      theme_color: "#2563eb",
-      icons: [
-        {
-          src: CONFIG.ICON_PATH,
-          sizes: "512x512",
-          type: "image/png",
-          purpose: "any maskable"
-        }
-      ]
-    };
-    const manifestBlob = new Blob([JSON.stringify(manifestObj)], { type: 'application/json' });
-    const manifestUrl = URL.createObjectURL(manifestBlob);
-    const link = document.createElement('link');
-    link.rel = 'manifest';
-    link.href = manifestUrl;
-    document.head.appendChild(link);
-
     if ('serviceWorker' in navigator) {
-      const swCode = `
-        const CACHE_NAME = 'calba-pwa-v1';
-        self.addEventListener('install', (e) => self.skipWaiting());
-        self.addEventListener('activate', (e) => e.waitUntil(clients.claim()));
-        self.addEventListener('fetch', (e) => {
-          if (e.request.method !== 'GET') return;
-          e.respondWith(
-            fetch(e.request)
-              .then((res) => {
-                if (res && res.status === 200) {
-                  const copy = res.clone();
-                  caches.open(CACHE_NAME).then((c) => c.put(e.request, copy));
-                }
-                return res;
-              })
-              .catch(() => caches.match(e.request))
-          );
-        });
-      `;
-      const swBlob = new Blob([swCode], { type: 'text/javascript' });
-      const swUrl = URL.createObjectURL(swBlob);
-      navigator.serviceWorker.register(swUrl).catch(console.error);
+      navigator.serviceWorker.register('sw.js').catch(console.error);
     }
   }
 
@@ -481,7 +437,7 @@
     toast.className = `toast ${type}`;
     toast.style.display = 'block';
     toast.style.opacity = '1';
-    
+
     setTimeout(() => {
       toast.style.opacity = '0';
       setTimeout(() => {
@@ -701,7 +657,7 @@
 
     const sortedPeriods = Array.from(periods).sort().reverse();
     select.innerHTML = '<option value="all">全期間</option>';
-    
+
     sortedPeriods.forEach(p => {
       const opt = document.createElement('option');
       opt.value = p;
@@ -730,8 +686,8 @@
 
     records.sort((a, b) => (a.date + a.startTime).localeCompare(b.date + b.startTime));
 
-    const filtered = filterPeriod === 'all' 
-      ? records 
+    const filtered = filterPeriod === 'all'
+      ? records
       : records.filter(r => getPayPeriodKey(r.date, cutoffDay) === filterPeriod);
 
     if (filtered.length === 0) {
@@ -788,7 +744,7 @@
     });
 
     const percent = Math.min(100, Math.max(0, (yearTotalSalary / annualLimit) * 100)).toFixed(1);
-    
+
     document.getElementById('annualTaxLabel').textContent = `${currentYear}年(1〜12月) 給与累計`;
     document.getElementById('annualTaxVal').textContent = `¥${yearTotalSalary.toLocaleString()} / ¥${annualLimit.toLocaleString()} (${percent}%)`;
 

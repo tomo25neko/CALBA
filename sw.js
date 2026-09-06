@@ -1,4 +1,4 @@
-const CACHE_NAME = 'calba-pwa-v1';
+const CACHE_NAME = 'calba-pwa-v1.1';
 const STATIC_ASSETS = [
   './',
   './index.html',
@@ -17,15 +17,17 @@ self.addEventListener('install', (event) => {
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((keys) => {
+    caches.keys().then((cacheNames) => {
       return Promise.all(
-        keys.map((key) => {
-          if (key !== CACHE_NAME) {
-            return caches.delete(key);
+        cacheNames.map((cacheName) => {
+          // 自分のPREFIXで始まり、かつ開発版(-dev-)ではなく、今の名前でもない場合のみ消す
+          if (cacheName.startsWith(CACHE_PREFIX) &&  
+              cacheName !== CACHE_NAME) {
+            return caches.delete(cacheName);
           }
         })
       );
-    }).then(() => clients.claim())
+    })
   );
 });
 

@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>バイト給与計算ツール（昼シフト版）</title>
+  <link rel="icon" href="icon.png">
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --text: #1e293b;
+      --border: #e2e8f0;
+      --danger: #ef4444;
+      --danger-hover: #dc2626;
+      --accent-badge: #dbeafe;
+      --accent-badge-text: #1e40af;
+      --success: #10b981;
+      --warning: #f59e0b;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      padding: 16px;
+    }
+
+    .container {
+      max-width: 780px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    h1 { font-size: 1.4rem; text-align: center; margin-bottom: 2px; }
+    .subtitle { text-align: center; font-size: 0.85rem; color: #64748b; margin-bottom: 8px; }
+
+    .card {
+      background: var(--card-bg);
+      padding: 16px 20px;
+      border-radius: 12px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+      border: 1px solid var(--border);
+    }
+
+    h2 {
+      font-size: 1rem;
+      margin-bottom: 12px;
+      border-bottom: 2px solid var(--bg);
+      padding-bottom: 6px;
+      color: #334155;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 12px;
+    }
+
+    .form-group { display: flex; flex-direction: column; gap: 4px; }
+    label { font-size: 0.8rem; font-weight: 600; color: #64748b; }
+
+    input[type="number"], input[type="time"], input[type="date"], select {
+      width: 100%;
+      padding: 8px 10px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 0.9rem;
+      outline: none;
+      background-color: #fff;
+    }
+    input:focus, select:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+    }
+
+    .preset-title {
+      font-size: 0.75rem;
+      color: #64748b;
+      margin-top: 10px;
+      font-weight: 600;
+    }
+    .preset-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 4px;
+    }
+    .btn-preset {
+      background-color: #f1f5f9;
+      border: 1px solid var(--border);
+      color: #334155;
+      padding: 4px 10px;
+      border-radius: 16px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    .btn-preset:hover {
+      background-color: #e2e8f0;
+      color: var(--primary);
+      border-color: #cbd5e1;
+    }
+
+    .checkbox-group {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      margin-top: 12px;
+      flex-wrap: wrap;
+    }
+
+    .checkbox-label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      user-select: none;
+    }
+
+    .btn {
+      background-color: var(--primary);
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 6px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      width: 100%;
+      margin-top: 12px;
+      transition: 0.2s;
+    }
+    .btn:hover { background-color: var(--primary-hover); }
+
+    .btn-group {
+      display: flex;
+      gap: 6px;
+    }
+
+    .btn-secondary {
+      background-color: #fff;
+      color: #334155;
+      border: 1px solid var(--border);
+      padding: 4px 10px;
+      font-size: 0.8rem;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .btn-secondary:hover { background-color: var(--bg); }
+
+    .btn-danger {
+      background-color: var(--danger);
+      color: white;
+      border: none;
+      padding: 4px 8px;
+      font-size: 0.75rem;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .btn-danger:hover { background-color: var(--danger-hover); }
+
+    .stats-container {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      text-align: center;
+    }
+
+    .stat-box { background-color: var(--bg); padding: 12px; border-radius: 8px; }
+    .stat-title { font-size: 0.75rem; color: #64748b; font-weight: 600; }
+    .stat-value { font-size: 1.15rem; font-weight: bold; color: var(--primary); margin-top: 2px; }
+
+    .tax-limit-card {
+      margin-top: 12px;
+      background: #f8fafc;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px dashed var(--border);
+    }
+    .tax-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #475569;
+      margin-bottom: 4px;
+    }
+    .progress-bar-bg {
+      background-color: #e2e8f0;
+      height: 8px;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .progress-bar-fill {
+      background-color: var(--primary);
+      height: 100%;
+      width: 0%;
+      transition: width 0.3s;
+    }
+    .progress-bar-fill.warning { background-color: var(--warning); }
+    .progress-bar-fill.danger { background-color: var(--danger); }
+
+    .filter-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .table-responsive { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; margin-top: 6px; font-size: 0.85rem; }
+    th, td { border-bottom: 1px solid var(--border); padding: 8px 6px; text-align: left; white-space: nowrap; }
+    th { background-color: var(--bg); color: #64748b; font-weight: 600; }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 6px;
+      font-size: 0.7rem;
+      border-radius: 4px;
+      background-color: var(--accent-badge);
+      color: var(--accent-badge-text);
+      margin-right: 4px;
+      font-weight: 600;
+    }
+    .text-right { text-align: right; }
+    .empty-msg { text-align: center; color: #94a3b8; padding: 20px 0; font-size: 0.85rem; }
+
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background-color: #334155;
+      color: #fff;
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      display: none;
+      z-index: 1000;
+      transition: opacity 0.3s;
+    }
+    .toast.error { background-color: var(--danger); }
+    .toast.success { background-color: var(--success); }
+  </style>
+</head>
+<body>
+
+<div id="toast" class="toast"></div>
+
+<div class="container">
+  <div>
+    <h1>バイト給与計算ツール</h1>
+    <div class="subtitle">昼シフト特化・自動休憩控除＆103万目安進捗対応</div>
+  </div>
+
+  <div class="card">
+    <h2>1. 時給・手当・締め日設定</h2>
+    <div class="grid-3">
+      <div class="form-group">
+        <label for="baseWage">基本時給 (円)</label>
+        <input type="number" id="baseWage" value="1035" min="0" oninput="saveSettingsAndRecalculate()">
+      </div>
+      <div class="form-group">
+        <label for="weekendBonus">土日加給 (+円/時)</label>
+        <input type="number" id="weekendBonus" value="30" min="0" oninput="saveSettingsAndRecalculate()">
+      </div>
+      <div class="form-group">
+        <label for="specialBonus">特別加給 (+円/時)</label>
+        <input type="number" id="specialBonus" value="50" min="0" oninput="saveSettingsAndRecalculate()">
+      </div>
+    </div>
+    <div style="margin-top: 10px;" class="grid-3">
+      <div class="form-group">
+        <label for="cutoffDay">給与締め日</label>
+        <select id="cutoffDay" onchange="saveSettingsAndRecalculate()">
+          <option value="31">月末締め</option>
+          <option value="10">10日締め</option>
+          <option value="15">15日締め</option>
+          <option value="20">20日締め</option>
+          <option value="25">25日締め</option>
+        </select>
+      </div>
+      <div class="form-group" style="grid-column: span 2;">
+        <label for="annualLimit">年間扶養目安枠 (円)</label>
+        <input type="number" id="annualLimit" value="1030000" step="10000" oninput="saveSettingsAndRecalculate()">
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>2. 勤務記録追加</h2>
+    <form id="workForm" onsubmit="addWorkRecord(event)">
+      <div class="grid-3">
+        <div class="form-group">
+          <label for="workDate">日付</label>
+          <input type="date" id="workDate" required onchange="handleDateChange()">
+        </div>
+        <div class="form-group">
+          <label for="startTime">開始時間</label>
+          <input type="time" id="startTime" value="09:00" required>
+        </div>
+        <div class="form-group">
+          <label for="endTime">終了時間</label>
+          <input type="time" id="endTime" value="17:00" required>
+        </div>
+      </div>
+
+      <div class="preset-title">⚡ 定番シフトをクイック入力:</div>
+      <div class="preset-container">
+        <button type="button" class="btn-preset" onclick="setShiftPreset('09:00', '17:00')">09:00〜17:00 (8h)</button>
+        <button type="button" class="btn-preset" onclick="setShiftPreset('09:00', '14:00')">09:00〜14:00 (5h)</button>
+        <button type="button" class="btn-preset" onclick="setShiftPreset('10:00', '15:00')">10:00〜15:00 (5h)</button>
+        <button type="button" class="btn-preset" onclick="setShiftPreset('12:00', '17:00')">12:00〜17:00 (5h)</button>
+        <button type="button" class="btn-preset" onclick="setShiftPreset('11:00', '19:00')">11:00〜19:00 (8h)</button>
+      </div>
+
+      <div class="checkbox-group">
+        <label class="checkbox-label">
+          <input type="checkbox" id="isWeekend"> 土日適用 (日付から自動判定)
+        </label>
+        <label class="checkbox-label">
+          <input type="checkbox" id="isSpecial"> 特別時給アップ適用
+        </label>
+      </div>
+
+      <button type="submit" class="btn">勤務記録を追加する</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <div class="filter-bar">
+      <h2>3. 給与統計</h2>
+      <div style="display: flex; gap: 8px; align-items: center;">
+        <label for="monthFilter" style="font-size: 0.8rem;">表示期間:</label>
+        <select id="monthFilter" style="width: auto; padding: 4px 8px;" onchange="renderHistory()">
+        </select>
+      </div>
+    </div>
+    <div class="stats-container">
+      <div class="stat-box">
+        <div class="stat-title">勤務日数</div>
+        <div class="stat-value" id="statDays">0 日</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-title">総実労働時間</div>
+        <div class="stat-value" id="statHours">0.00 h</div>
+      </div>
+      <div class="stat-box" style="background-color: #eff6ff;">
+        <div class="stat-title" style="color: var(--primary);">合計支給額</div>
+        <div class="stat-value" id="statSalary" style="color: var(--primary-hover);">¥0</div>
+      </div>
+    </div>
+
+    <div class="tax-limit-card">
+      <div class="tax-header">
+        <span id="annualTaxLabel">今年(1〜12月)の給与累計</span>
+        <span id="annualTaxVal">¥0 / ¥1,030,000 (0.0%)</span>
+      </div>
+      <div class="progress-bar-bg">
+        <div id="annualProgressBar" class="progress-bar-fill"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>
+      <span>4. 勤務履歴</span>
+      <div class="btn-group">
+        <button class="btn-secondary" onclick="exportCSV(false)">表示中のみCSV</button>
+        <button class="btn-secondary" onclick="exportCSV(true)">全期間CSV</button>
+        <button class="btn-secondary" onclick="document.getElementById('importFileInput').click()">CSV読込</button>
+        <input type="file" id="importFileInput" accept=".csv" style="display: none;" onchange="importCSV(event)">
+      </div>
+    </h2>
+    <div class="table-responsive">
+      <table>
+        <thead>
+          <tr>
+            <th>日付</th>
+            <th>時間帯</th>
+            <th>滞在 (控除)</th>
+            <th>実労働</th>
+            <th>手当</th>
+            <th class="text-right">日給</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody id="historyTable"></tbody>
+      </table>
+      <div id="emptyMsg" class="empty-msg">該当する勤務履歴がありません</div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const CONFIG = {
+    STORAGE_KEYS: {
+      SETTINGS: 'salary_calc_settings_daytime_v3',
+      RECORDS: 'salary_calc_records_daytime_v3'
+    },
+    DEFAULT_SETTINGS: {
+      baseWage: 1035,
+      weekendBonus: 30,
+      specialBonus: 50,
+      cutoffDay: "31",
+      annualLimit: 1030000
+    },
+    ICON_PATH: 'icon.png'
+  };
+
+  let records = [];
+
+  function initPWA() {
+    const manifestObj = {
+      name: "バイト給与計算ツール",
+      short_name: "給与計算",
+      start_url: "./",
+      display: "standalone",
+      background_color: "#f8fafc",
+      theme_color: "#2563eb",
+      icons: [
+        {
+          src: CONFIG.ICON_PATH,
+          sizes: "512x512",
+          type: "image/png",
+          purpose: "any maskable"
+        }
+      ]
+    };
+    const manifestBlob = new Blob([JSON.stringify(manifestObj)], { type: 'application/json' });
+    const manifestUrl = URL.createObjectURL(manifestBlob);
+    const link = document.createElement('link');
+    link.rel = 'manifest';
+    link.href = manifestUrl;
+    document.head.appendChild(link);
+
+    if ('serviceWorker' in navigator) {
+      const swCode = `
+        const CACHE_NAME = 'salary-calc-pwa-v1';
+        self.addEventListener('install', (e) => self.skipWaiting());
+        self.addEventListener('activate', (e) => e.waitUntil(clients.claim()));
+        self.addEventListener('fetch', (e) => {
+          if (e.request.method !== 'GET') return;
+          e.respondWith(
+            fetch(e.request)
+              .then((res) => {
+                if (res && res.status === 200) {
+                  const copy = res.clone();
+                  caches.open(CACHE_NAME).then((c) => c.put(e.request, copy));
+                }
+                return res;
+              })
+              .catch(() => caches.match(e.request))
+          );
+        });
+      `;
+      const swBlob = new Blob([swCode], { type: 'text/javascript' });
+      const swUrl = URL.createObjectURL(swBlob);
+      navigator.serviceWorker.register(swUrl).catch(console.error);
+    }
+  }
+
+  function showToast(message, type = 'info') {
+    const toast = document.getElementById('toast');
+    toast.textContent = message;
+    toast.className = `toast ${type}`;
+    toast.style.display = 'block';
+    toast.style.opacity = '1';
+    
+    setTimeout(() => {
+      toast.style.opacity = '0';
+      setTimeout(() => {
+        toast.style.display = 'none';
+      }, 300);
+    }, 3000);
+  }
+
+  window.addEventListener('DOMContentLoaded', () => {
+    initPWA();
+
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    document.getElementById('workDate').value = `${yyyy}-${mm}-${dd}`;
+    handleDateChange();
+
+    loadSettings();
+    loadRecords();
+    initMonthFilter();
+    renderHistory();
+  });
+
+  function setShiftPreset(start, end) {
+    document.getElementById('startTime').value = start;
+    document.getElementById('endTime').value = end;
+    showToast(`時間を ${start} 〜 ${end} にセットしました。`);
+  }
+
+  function handleDateChange() {
+    const val = document.getElementById('workDate').value;
+    if (!val) return;
+    const [y, m, d] = val.split('-').map(Number);
+    const day = new Date(y, m - 1, d).getDay();
+    document.getElementById('isWeekend').checked = (day === 0 || day === 6);
+  }
+
+  function loadSettings() {
+    const saved = localStorage.getItem(CONFIG.STORAGE_KEYS.SETTINGS);
+    if (saved) {
+      try {
+        const s = JSON.parse(saved);
+        document.getElementById('baseWage').value = s.baseWage ?? CONFIG.DEFAULT_SETTINGS.baseWage;
+        document.getElementById('weekendBonus').value = s.weekendBonus ?? CONFIG.DEFAULT_SETTINGS.weekendBonus;
+        document.getElementById('specialBonus').value = s.specialBonus ?? CONFIG.DEFAULT_SETTINGS.specialBonus;
+        document.getElementById('cutoffDay').value = s.cutoffDay ?? CONFIG.DEFAULT_SETTINGS.cutoffDay;
+        document.getElementById('annualLimit').value = s.annualLimit ?? CONFIG.DEFAULT_SETTINGS.annualLimit;
+      } catch (e) {
+        applyDefaultSettings();
+      }
+    } else {
+      applyDefaultSettings();
+    }
+  }
+
+  function applyDefaultSettings() {
+    document.getElementById('baseWage').value = CONFIG.DEFAULT_SETTINGS.baseWage;
+    document.getElementById('weekendBonus').value = CONFIG.DEFAULT_SETTINGS.weekendBonus;
+    document.getElementById('specialBonus').value = CONFIG.DEFAULT_SETTINGS.specialBonus;
+    document.getElementById('cutoffDay').value = CONFIG.DEFAULT_SETTINGS.cutoffDay;
+    document.getElementById('annualLimit').value = CONFIG.DEFAULT_SETTINGS.annualLimit;
+  }
+
+  function saveSettingsAndRecalculate() {
+    const settings = {
+      baseWage: Number(document.getElementById('baseWage').value) || 0,
+      weekendBonus: Number(document.getElementById('weekendBonus').value) || 0,
+      specialBonus: Number(document.getElementById('specialBonus').value) || 0,
+      cutoffDay: document.getElementById('cutoffDay').value,
+      annualLimit: Number(document.getElementById('annualLimit').value) || CONFIG.DEFAULT_SETTINGS.annualLimit
+    };
+    localStorage.setItem(CONFIG.STORAGE_KEYS.SETTINGS, JSON.stringify(settings));
+    initMonthFilter();
+    renderHistory();
+  }
+
+  function loadRecords() {
+    const saved = localStorage.getItem(CONFIG.STORAGE_KEYS.RECORDS);
+    if (saved) {
+      try {
+        records = JSON.parse(saved);
+        records.forEach((r, idx) => {
+          if (!r.id) r.id = Date.now() + idx;
+        });
+      } catch (e) {
+        records = [];
+      }
+    } else {
+      records = [];
+    }
+  }
+
+  function saveRecords() {
+    localStorage.setItem(CONFIG.STORAGE_KEYS.RECORDS, JSON.stringify(records));
+  }
+
+  function calculateBreakHours(totalHours) {
+    if (totalHours <= 4) return 0;
+    const extraHours = Math.floor(totalHours - 4);
+    return extraHours * 0.25;
+  }
+
+  function calculateRecordDetails(record) {
+    const baseWage = Number(document.getElementById('baseWage').value) || 0;
+    const weekendBonus = Number(document.getElementById('weekendBonus').value) || 0;
+    const specialBonus = Number(document.getElementById('specialBonus').value) || 0;
+
+    const [sH, sM] = record.startTime.split(':').map(Number);
+    const [eH, eM] = record.endTime.split(':').map(Number);
+
+    const start = sH + sM / 60;
+    const end = eH + eM / 60;
+    const totalHours = Math.max(0, end - start);
+
+    const breakHours = calculateBreakHours(totalHours);
+    const actualHours = Math.max(0, totalHours - breakHours);
+
+    let hourRate = baseWage;
+    if (record.isWeekend) hourRate += weekendBonus;
+    if (record.isSpecial) hourRate += specialBonus;
+
+    const dailySalary = Math.floor(actualHours * hourRate);
+
+    return { totalHours, breakHours, actualHours, dailySalary };
+  }
+
+  function addWorkRecord(e) {
+    e.preventDefault();
+    const dateVal = document.getElementById('workDate').value;
+    const startVal = document.getElementById('startTime').value;
+    const endVal = document.getElementById('endTime').value;
+
+    if (!dateVal) {
+      showToast('日付を指定してください。', 'error');
+      return;
+    }
+
+    if (endVal <= startVal) {
+      showToast('終了時間は開始時間より後の時間を指定してください。', 'error');
+      return;
+    }
+
+    const isDuplicate = records.some(r => {
+      if (r.date !== dateVal) return false;
+      return (startVal < r.endTime && endVal > r.startTime);
+    });
+
+    if (isDuplicate) {
+      showToast('同日に同じ時間帯（または重複する時間帯）の記録が既に存在します。', 'error');
+      return;
+    }
+
+    records.push({
+      id: Date.now(),
+      date: dateVal,
+      startTime: startVal,
+      endTime: endVal,
+      isWeekend: document.getElementById('isWeekend').checked,
+      isSpecial: document.getElementById('isSpecial').checked
+    });
+
+    saveRecords();
+    initMonthFilter();
+    renderHistory();
+
+    showToast('勤務記録を追加しました。', 'success');
+
+    handleDateChange();
+    document.getElementById('isSpecial').checked = false;
+  }
+
+  function deleteRecord(id) {
+    records = records.filter(r => Number(r.id) !== Number(id));
+    saveRecords();
+    initMonthFilter();
+    renderHistory();
+    showToast('記録を削除しました。', 'info');
+  }
+
+  function getPayPeriodKey(dateStr, cutoffDayStr) {
+    const cutoff = Number(cutoffDayStr);
+    const [y, m, d] = dateStr.split('-').map(Number);
+
+    if (cutoff === 31) {
+      return `${y}-${String(m).padStart(2, '0')}`;
+    }
+
+    if (d > cutoff) {
+      let nextM = m + 1;
+      let nextY = y;
+      if (nextM > 12) {
+        nextM = 1;
+        nextY += 1;
+      }
+      return `${nextY}-${String(nextM).padStart(2, '0')}`;
+    } else {
+      return `${y}-${String(m).padStart(2, '0')}`;
+    }
+  }
+
+  function initMonthFilter() {
+    const select = document.getElementById('monthFilter');
+    const currentVal = select.value;
+    const cutoffDay = document.getElementById('cutoffDay').value;
+    const periods = new Set();
+
+    records.forEach(r => {
+      if (r.date) {
+        periods.add(getPayPeriodKey(r.date, cutoffDay));
+      }
+    });
+
+    const nowStr = new Date().toISOString().substring(0, 10);
+    const currentPeriod = getPayPeriodKey(nowStr, cutoffDay);
+    periods.add(currentPeriod);
+
+    const sortedPeriods = Array.from(periods).sort().reverse();
+    select.innerHTML = '<option value="all">全期間</option>';
+    
+    sortedPeriods.forEach(p => {
+      const opt = document.createElement('option');
+      opt.value = p;
+      if (cutoffDay === "31") {
+        opt.textContent = p.replace('-', '年') + '月分';
+      } else {
+        opt.textContent = `${p.replace('-', '年')}月分 (${cutoffDay}日締め)`;
+      }
+      select.appendChild(opt);
+    });
+
+    if (currentVal && Array.from(select.options).some(o => o.value === currentVal)) {
+      select.value = currentVal;
+    } else {
+      select.value = currentPeriod;
+    }
+  }
+
+  function renderHistory() {
+    const tbody = document.getElementById('historyTable');
+    const emptyMsg = document.getElementById('emptyMsg');
+    const filterPeriod = document.getElementById('monthFilter').value;
+    const cutoffDay = document.getElementById('cutoffDay').value;
+
+    tbody.innerHTML = '';
+
+    records.sort((a, b) => (a.date + a.startTime).localeCompare(b.date + b.startTime));
+
+    const filtered = filterPeriod === 'all' 
+      ? records 
+      : records.filter(r => getPayPeriodKey(r.date, cutoffDay) === filterPeriod);
+
+    if (filtered.length === 0) {
+      emptyMsg.style.display = 'block';
+    } else {
+      emptyMsg.style.display = 'none';
+    }
+
+    let totalDays = filtered.length;
+    let totalActualHours = 0;
+    let totalSalary = 0;
+
+    filtered.forEach(r => {
+      const d = calculateRecordDetails(r);
+      totalActualHours += d.actualHours;
+      totalSalary += d.dailySalary;
+
+      const badges = [];
+      if (r.isWeekend) badges.push('<span class="badge">土日</span>');
+      if (r.isSpecial) badges.push('<span class="badge">特UP</span>');
+      const badgeStr = badges.length > 0 ? badges.join('') : '-';
+
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${r.date}</td>
+        <td>${r.startTime}〜${r.endTime}</td>
+        <td>${d.totalHours.toFixed(2)}h (${d.breakHours.toFixed(2)}h)</td>
+        <td><strong>${d.actualHours.toFixed(2)}h</strong></td>
+        <td>${badgeStr}</td>
+        <td class="text-right"><strong>¥${d.dailySalary.toLocaleString()}</strong></td>
+        <td><button class="btn-danger" onclick="deleteRecord(${r.id})">削除</button></td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    document.getElementById('statDays').textContent = `${totalDays} 日`;
+    document.getElementById('statHours').textContent = `${totalActualHours.toFixed(2)} h`;
+    document.getElementById('statSalary').textContent = `¥${totalSalary.toLocaleString()}`;
+
+    calculateAnnualTaxLimit();
+  }
+
+  function calculateAnnualTaxLimit() {
+    const currentYear = new Date().getFullYear();
+    const annualLimit = Number(document.getElementById('annualLimit').value) || CONFIG.DEFAULT_SETTINGS.annualLimit;
+
+    let yearTotalSalary = 0;
+
+    records.forEach(r => {
+      if (r.date && r.date.startsWith(String(currentYear))) {
+        const d = calculateRecordDetails(r);
+        yearTotalSalary += d.dailySalary;
+      }
+    });
+
+    const percent = Math.min(100, Math.max(0, (yearTotalSalary / annualLimit) * 100)).toFixed(1);
+    
+    document.getElementById('annualTaxLabel').textContent = `${currentYear}年(1〜12月) 給与累計`;
+    document.getElementById('annualTaxVal').textContent = `¥${yearTotalSalary.toLocaleString()} / ¥${annualLimit.toLocaleString()} (${percent}%)`;
+
+    const bar = document.getElementById('annualProgressBar');
+    bar.style.width = `${percent}%`;
+
+    bar.className = 'progress-bar-fill';
+    if (percent >= 90) {
+      bar.classList.add('danger');
+    } else if (percent >= 75) {
+      bar.classList.add('warning');
+    }
+  }
+
+  function exportCSV(isAll = false) {
+    const filterPeriod = document.getElementById('monthFilter').value;
+    const cutoffDay = document.getElementById('cutoffDay').value;
+
+    const targetRecords = (isAll || filterPeriod === 'all')
+      ? [...records]
+      : records.filter(r => getPayPeriodKey(r.date, cutoffDay) === filterPeriod);
+
+    if (targetRecords.length === 0) {
+      showToast('出力できるデータがありません。', 'error');
+      return;
+    }
+
+    targetRecords.sort((a, b) => (a.date + a.startTime).localeCompare(b.date + b.startTime));
+
+    let csv = '\uFEFF日付,開始,終了,滞在(h),控除(h),実労働(h),土日,特別UP,日給(円)\n';
+    targetRecords.forEach(r => {
+      const d = calculateRecordDetails(r);
+      csv += `${r.date},${r.startTime},${r.endTime},${d.totalHours.toFixed(2)},${d.breakHours.toFixed(2)},${d.actualHours.toFixed(2)},${r.isWeekend ? '○' : ''},${r.isSpecial ? '○' : ''},${d.dailySalary}\n`;
+    });
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    const label = isAll ? '全期間' : filterPeriod;
+    link.download = `給与記録_${label}_${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+    showToast(`${isAll ? '全期間' : '表示期間'}のCSVを出力しました。`, 'success');
+  }
+
+  function importCSV(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(evt) {
+      try {
+        const lines = evt.target.result.split(/\r\n|\n/);
+        let importedCount = 0;
+
+        lines.forEach((line, index) => {
+          if (index === 0 || !line.trim()) return;
+          const cols = line.split(',');
+          if (cols.length >= 3) {
+            const date = cols[0].replace('\uFEFF', '').trim();
+            const startTime = cols[1].trim();
+            const endTime = cols[2].trim();
+            const isWeekend = cols[6] ? cols[6].trim() === '○' : false;
+            const isSpecial = cols[7] ? cols[7].trim() === '○' : false;
+
+            if (date && startTime && endTime) {
+              const isExist = records.some(r => r.date === date && r.startTime === startTime && r.endTime === endTime);
+              if (!isExist) {
+                records.push({
+                  id: Date.now() + index,
+                  date,
+                  startTime,
+                  endTime,
+                  isWeekend,
+                  isSpecial
+                });
+                importedCount++;
+              }
+            }
+          }
+        });
+
+        saveRecords();
+        initMonthFilter();
+        renderHistory();
+        showToast(`${importedCount} 件の記録を取り込みました。`, 'success');
+      } catch (err) {
+        showToast('CSVファイルの読み込みに失敗しました。', 'error');
+      }
+      e.target.value = '';
+    };
+    reader.readAsText(file, 'UTF-8');
+  }
+</script>
+</body>
+</html>
